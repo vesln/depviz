@@ -8,6 +8,55 @@ var graphviz = require('graphviz');
 var request = require('superagent');
 
 /**
+ * Help message.
+ */
+
+var help = [
+   'Usage: depviz <module-name> --out foo.png',
+   '',
+   'Options:',
+   '',
+   '  --verbose   verbose mode',
+   '  --help      display this help message',
+   '  --version   display the version number',
+   '',
+].join('\n');
+
+/**
+ * Args.
+ */
+
+var args = process.argv.slice(2);
+
+/**
+ * Module name.
+ */
+
+var name = args.filter(function(arg) {
+  return arg.indexOf('--') !== 0;
+})[0];
+
+/**
+ * Verbose mode.
+ */
+
+var verbose = args.indexOf('--verbose') > -1;
+
+// --version
+
+if (args.indexOf('--version') > -1) {
+  console.log(require('../package.json').version);
+  process.exit(0);
+}
+
+// --help
+
+if (!name || !out || args.indexOf('--help') > -1) {
+  console.log(help);
+  process.exit(0);
+}
+
+/**
  * Search for the dependencies of `app`.
  *
  * @param {String} name
@@ -39,7 +88,7 @@ function search(name, end, deps) {
   });
 }
 
-search(process.argv[2], function(deps) {
+search(name, function(deps) {
   var g = graphviz.digraph('G');
 
   Object.keys(deps).forEach(function(dep) {
@@ -50,5 +99,5 @@ search(process.argv[2], function(deps) {
     });
   });
 
-  g.output('png', 'test01.png');
+  g.output('png', name + '.png');
 });
