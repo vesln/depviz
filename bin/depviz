@@ -1,0 +1,54 @@
+#!/usr/bin/env node
+
+/**
+ * External dependencies.
+ */
+
+var graphviz = require('graphviz');
+var request = require('superagent');
+
+/**
+ * Search for the dependencies of `app`.
+ *
+ * @param {String} name
+ * @param {Function} end
+ * @param {Object} [deps]
+ * @api private
+ */
+
+function search(name, end, deps) {
+  deps = deps || Object.create(null);
+
+  if (deps[name]) return end(deps);
+  deps[name] = [];
+
+  request('http://registry.npmjs.org/' + name, function(err, res) {
+    var ver = res.body['dist-tags'].latest;
+    var dependencies = Object.keys(res.body.versions[ver].dependencies || {});
+    if (dependencies.length === 0) return end();
+    var i = 0;
+
+    function done() {
+      if (++i >= dependencies.length) end(deps);
+    }
+
+    dependencies.forEach(function(key) {
+      deps[name].push(key);
+      search(key, done, deps);
+    });
+  });
+}
+
+search(process.argv[2], function(deps) {
+  var g = graphviz.digraph('G');
+
+  Object.keys(deps).forEach(function(dep) {
+    if (!g.getNode(dep)) g.addNode(dep);
+    deps[dep].forEach(function(child) {
+      g.addNode(child);
+      g.addEdge(dep, child);
+    });
+  });
+
+  g.output('png', 'test01.png');
+});
