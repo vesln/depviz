@@ -23,7 +23,7 @@ npm install depviz -g
 
 ## Notes
 
-Alternatively you might want to use:
+Alternatively you might want to use `npm ls`.
 
 ```
 $ git clone express
