@@ -5,6 +5,7 @@
  */
 
 var graphviz = require('graphviz');
+var electron = require('electron');
 var request = require('superagent');
 
 /**
@@ -12,7 +13,7 @@ var request = require('superagent');
  */
 
 var help = [
-   'Usage: depviz <module-name> --out foo.png',
+   'Usage: depviz <module-name> --out <image-name>',
    '',
    'Options:',
    '',
@@ -26,32 +27,30 @@ var help = [
  * Args.
  */
 
-var args = process.argv.slice(2);
+var args = electron.argv();
 
 /**
  * Module name.
  */
 
-var name = args.filter(function(arg) {
-  return arg.indexOf('--') !== 0;
-})[0];
+var name = args.commands[0];
 
 /**
- * Verbose mode.
+ * Out.
  */
 
-var verbose = args.indexOf('--verbose') > -1;
+var out = args.params.out || name;
 
 // --version
 
-if (args.indexOf('--version') > -1) {
+if (args.modes.indexOf('--version') > -1) {
   console.log(require('../package.json').version);
   process.exit(0);
 }
 
 // --help
 
-if (!name || !out || args.indexOf('--help') > -1) {
+if (!name || !out || args.modes.indexOf('--help') > -1) {
   console.log(help);
   process.exit(0);
 }
@@ -99,5 +98,5 @@ search(name, function(deps) {
     });
   });
 
-  g.output('png', name + '.png');
+  g.output('png', out + '.png');
 });
