@@ -13,16 +13,18 @@ var request = require('superagent');
 
 var Formatter = require('../lib/formatter/dot');
 
+
 /**
  * Help message.
  */
 
 var help = [
-   'Usage: depviz <module-name> --out <image-name>',
+   'Usage: depviz <module-name>',
   '',
    'Options:',
    '',
    '  --verbose   verbose mode',
+   '  --out       specify the name of the PNG image',
    '  --help      display this help message',
    '  --version   display the version number',
    '',
