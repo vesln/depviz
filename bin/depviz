@@ -5,13 +5,13 @@
  */
 
 var electron = require('electron');
-var request = require('superagent');
 
 /**
  * Internal dependencies.
  */
 
 var Formatter = require('../lib/formatter/dot');
+var Deps = require('../lib/deps');
 
 /**
  * Help message.
@@ -61,67 +61,13 @@ if (!name || !out || args.modes.indexOf('help') > -1) {
   process.exit(0);
 }
 
-/**
- * Debug.
- */
+var deps = new Deps(name);
 
-var debug = args.modes.indexOf('verbose') > -1
-  ? console.log
-  : function() {};
+deps.find(function(err, store) {
+  if (err) {
+    console.error(err);
+    process.exit(1);
+  }
 
-/**
- * Notify the user that the module called `name`
- * cannot be found.
- *
- * @param {String} name
- * @api private
- */
-
-function notFound(name) {
-  debug("Couldn't find %s on npm, exiting...", name);
-  console.error('The module "' + name + '" cannot be found');
-  process.exit(0);
-}
-
-/**
- * Search for the dependencies of `app`.
- *
- * @param {String} name
- * @param {Function} end
- * @param {Object} [store]
- * @api private
- */
-
-function search(name, end, store) {
-  store = store || Object.create(null);
-  debug('Searching for %s', name);
-
-  if (store[name]) return end(store);
-  store[name] = [];
-
-  request('http://registry.npmjs.org/' + name, function(err, res) {
-    if (err) throw err;
-    if (!Object.keys(res.body).length) return notFound(name);
-    debug('Found ' + name);
-    var ver = res.body['dist-tags'].latest;
-    var dependencies = Object.keys(res.body.versions[ver].dependencies || {});
-    if (dependencies.length === 0) return end();
-    var i = 0;
-
-    function done() {
-      if (++i >= dependencies.length) end(store);
-    }
-
-    dependencies.forEach(function(key) {
-      store[name].push(key);
-      search(key, done, store);
-    });
-  });
-}
-
-debug('Start fetching dependencies');
-
-search(name, function(store) {
-  debug('Done fetching dependencies. Reporting...');
-  new Formatter(store, debug).render(out);
+  new Formatter(store).render(out);
 });
