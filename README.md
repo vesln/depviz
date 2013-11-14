@@ -11,6 +11,17 @@ Quick and dirty module dependency visualization with Graphviz.
 
 ## Description
 
+```
+Usage: depviz <module-name>
+
+Options:
+
+  --verbose   verbose mode
+  --out       specify the name of the PNG image
+  --help      display this help message
+  --version   display the version number
+```
+
 ## Requirements
 
 - GraphViz
