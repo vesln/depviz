@@ -4,9 +4,14 @@
  * External dependencies.
  */
 
-var graphviz = require('graphviz');
 var electron = require('electron');
 var request = require('superagent');
+
+/**
+ * Internal dependencies.
+ */
+
+var Formatter = require('../lib/formatter/dot');
 
 /**
  * Help message.
@@ -73,15 +78,15 @@ function notFound(name) {
  *
  * @param {String} name
  * @param {Function} end
- * @param {Object} [deps]
+ * @param {Object} [store]
  * @api private
  */
 
-function search(name, end, deps) {
-  deps = deps || Object.create(null);
+function search(name, end, store) {
+  store = store || Object.create(null);
 
-  if (deps[name]) return end(deps);
-  deps[name] = [];
+  if (store[name]) return end(store);
+  store[name] = [];
 
   request('http://registry.npmjs.org/' + name, function(err, res) {
     if (err) throw err;
@@ -92,26 +97,16 @@ function search(name, end, deps) {
     var i = 0;
 
     function done() {
-      if (++i >= dependencies.length) end(deps);
+      if (++i >= dependencies.length) end(store);
     }
 
     dependencies.forEach(function(key) {
-      deps[name].push(key);
-      search(key, done, deps);
+      store[name].push(key);
+      search(key, done, store);
     });
   });
 }
 
-search(name, function(deps) {
-  var g = graphviz.digraph('G');
-
-  Object.keys(deps).forEach(function(dep) {
-    if (!g.getNode(dep)) g.addNode(dep);
-    deps[dep].forEach(function(child) {
-      g.addNode(child);
-      g.addEdge(dep, child);
-    });
-  });
-
-  g.output('png', out + '.png');
+search(name, function(store) {
+  new Formatter(store).render(out);
 });
