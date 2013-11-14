@@ -13,7 +13,6 @@ var request = require('superagent');
 
 var Formatter = require('../lib/formatter/dot');
 
-
 /**
  * Help message.
  */
@@ -50,17 +49,25 @@ var out = args.params.out || name;
 
 // --version
 
-if (args.modes.indexOf('--version') > -1) {
+if (args.modes.indexOf('version') > -1) {
   console.log(require('../package.json').version);
   process.exit(0);
 }
 
 // --help
 
-if (!name || !out || args.modes.indexOf('--help') > -1) {
+if (!name || !out || args.modes.indexOf('help') > -1) {
   console.log(help);
   process.exit(0);
 }
+
+/**
+ * Debug.
+ */
+
+var debug = args.modes.indexOf('verbose') > -1
+  ? console.log
+  : function() {};
 
 /**
  * Notify the user that the module called `name`
@@ -71,6 +78,7 @@ if (!name || !out || args.modes.indexOf('--help') > -1) {
  */
 
 function notFound(name) {
+  debug("Couldn't find %s on npm, exiting...", name);
   console.error('The module "' + name + '" cannot be found');
   process.exit(0);
 }
@@ -86,6 +94,7 @@ function notFound(name) {
 
 function search(name, end, store) {
   store = store || Object.create(null);
+  debug('Searching for %s', name);
 
   if (store[name]) return end(store);
   store[name] = [];
@@ -93,6 +102,7 @@ function search(name, end, store) {
   request('http://registry.npmjs.org/' + name, function(err, res) {
     if (err) throw err;
     if (!Object.keys(res.body).length) return notFound(name);
+    debug('Found ' + name);
     var ver = res.body['dist-tags'].latest;
     var dependencies = Object.keys(res.body.versions[ver].dependencies || {});
     if (dependencies.length === 0) return end();
@@ -109,6 +119,9 @@ function search(name, end, store) {
   });
 }
 
+debug('Start fetching dependencies');
+
 search(name, function(store) {
-  new Formatter(store).render(out);
+  debug('Done fetching dependencies. Reporting...');
+  new Formatter(store, debug).render(out);
 });
