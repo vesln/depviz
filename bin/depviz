@@ -14,7 +14,7 @@ var request = require('superagent');
 
 var help = [
    'Usage: depviz <module-name> --out <image-name>',
-   '',
+  '',
    'Options:',
    '',
    '  --verbose   verbose mode',
@@ -56,6 +56,19 @@ if (!name || !out || args.modes.indexOf('--help') > -1) {
 }
 
 /**
+ * Notify the user that the module called `name`
+ * cannot be found.
+ *
+ * @param {String} name
+ * @api private
+ */
+
+function notFound(name) {
+  console.error('The module "' + name + '" cannot be found');
+  process.exit(0);
+}
+
+/**
  * Search for the dependencies of `app`.
  *
  * @param {String} name
@@ -71,6 +84,8 @@ function search(name, end, deps) {
   deps[name] = [];
 
   request('http://registry.npmjs.org/' + name, function(err, res) {
+    if (err) throw err;
+    if (!Object.keys(res.body).length) return notFound(name);
     var ver = res.body['dist-tags'].latest;
     var dependencies = Object.keys(res.body.versions[ver].dependencies || {});
     if (dependencies.length === 0) return end();
